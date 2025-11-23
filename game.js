@@ -120,8 +120,12 @@ const Game = () => {
         },
         autoPlaceHumanShips() {
             if (gamePhase !== 'setup') return false;
-            // Clear existing ships
+            // Reset placement tracking first
+            shipsToPlace = [...FLEET]; // Ensure shipsToPlace is fresh
             currentShipIndex = 0;
+            // Clear existing ships from the board
+            human.getBoard().reset();
+            // Place all ships
             autoPlaceShips(human);
             currentShipIndex = shipsToPlace.length;
             return true;
