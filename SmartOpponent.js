@@ -9,42 +9,9 @@ const SmartOpponent = (enemyBoard) => {
 
     const fire = async () => {
         let aiCommentary = null;
-
-        // 1. Check result of last move if it exists
-        if (lastMove) {
-            const [lx, ly] = lastMove;
-            const isMiss = enemyBoard.getMissedAttacks().some(([mx, my]) => mx === lx && my === ly);
-
-            if (!isMiss) {
-                // Hit!
-                addNeighborsToStack(lx, ly);
-
-                // Trigger Commentary
-                const comment = await commentary.getCommentary('hit', { coords: `[${lx}, ${ly}]` });
-                if (comment) {
-                    console.log("AI says:", comment);
-                    aiCommentary = comment;
-                }
-            } else {
-                // Miss
-                const comment = await commentary.getCommentary('miss', { coords: `[${lx}, ${ly}]` });
-                if (comment) {
-                    console.log("AI says:", comment);
-                    aiCommentary = comment;
-                }
-            }
-        } else {
-            // First move
-            const comment = await commentary.getCommentary('game_start');
-            if (comment) {
-                console.log("AI says:", comment);
-                aiCommentary = comment;
-            }
-        }
-
         let move = null;
 
-        // 2. Process Stack (Target Mode)
+        // 1. Process Stack (Target Mode)
         while (targetStack.length > 0) {
             const candidate = targetStack.pop();
             if (!isAlreadyAttacked(candidate[0], candidate[1])) {
@@ -53,20 +20,47 @@ const SmartOpponent = (enemyBoard) => {
             }
         }
 
-        // 3. Hunt Mode (if no valid target from stack)
+        // 2. Hunt Mode (if no valid target from stack)
         if (!move) {
             move = getRandomMove();
         }
 
-        // 4. Register move and return with commentary
+        // 3. Register move and execute attack
         if (move) {
             lastMove = move;
             attackedCoords.add(`${move[0]},${move[1]}`);
-            enemyBoard.receiveAttack(move);
+
+            // Execute attack and get detailed result
+            const result = enemyBoard.receiveAttack(move);
+
+            // 4. Generate Commentary based on result
+            if (result.status === 'hit') {
+                // Hit!
+                addNeighborsToStack(move[0], move[1]);
+
+                if (result.sunk) {
+                    const comment = await commentary.getCommentary('sink', {
+                        shipType: result.ship.name,
+                        coords: `[${move[0]}, ${move[1]}]`
+                    });
+                    if (comment) aiCommentary = comment;
+                } else {
+                    const comment = await commentary.getCommentary('hit', {
+                        coords: `[${move[0]}, ${move[1]}]`,
+                        ship: result.ship
+                    });
+                    if (comment) aiCommentary = comment;
+                }
+            } else {
+                // Miss
+                const comment = await commentary.getCommentary('miss', { coords: `[${move[0]}, ${move[1]}]` });
+                if (comment) aiCommentary = comment;
+            }
+
             return { coords: move, commentary: aiCommentary };
         }
 
-        return { coords: null, commentary: aiCommentary };
+        return { coords: null, commentary: null };
     };
 
     const addNeighborsToStack = (x, y) => {

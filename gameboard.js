@@ -33,11 +33,16 @@ const Gameboard = () => {
         if (coords.some(([cx, cy]) => cx === x && cy === y)) {
           console.log("Hit ship at:", [x, y]);
           ship.hit();
-          return;
+          return {
+            status: 'hit',
+            ship: ship,
+            sunk: ship.isSunk()
+          };
         }
       }
       console.log("Miss at:", [x, y]);
       missedAttacks.push([x, y]);
+      return { status: 'miss' };
     },
     getMissedAttacks() {
       return missedAttacks;

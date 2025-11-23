@@ -11,7 +11,8 @@ const CommentarySystem = () => {
                 prompt = "You are a witty battleship commander. The game has just started. Give a short, encouraging or intimidating remark to the opponent.";
                 break;
             case 'hit':
-                prompt = `You are a battleship commander. You just hit an enemy ship at ${context.coords}. Make a brief, excited comment.`;
+                const shipInfo = context.ship ? `the enemy's ${context.ship.name}` : 'an enemy ship';
+                prompt = `You are a battleship commander. You just hit ${shipInfo} at ${context.coords}. Make a brief, excited comment.`;
                 break;
             case 'miss':
                 prompt = `You are a battleship commander. You missed the enemy at ${context.coords}. Make a brief, frustrated or determined comment.`;
