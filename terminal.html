@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Terminal - Demo</title>
+    <link rel="stylesheet" href="terminal.module.css">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            padding: 40px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Command Terminal Component -->
+        <div class="terminal">
+            <div class="terminalHeader">
+                <span class="terminalPrompt">█</span> NAVAL TACTICAL COMMAND SYSTEM v2.1
+            </div>
+            <div class="terminalContent" id="terminalOutput">
+                <div class="terminalLine terminalSystem">SYSTEM INITIALIZED...</div>
+                <div class="terminalLine terminalSystem">CONNECTING TO GEMINI AI CORE...</div>
+                <div class="terminalLine terminalSuccess">CONNECTION ESTABLISHED</div>
+                <div class="terminalLine">&nbsp;</div>
+                <div class="terminalLine"><span class="terminalPrompt">&gt;</span> AWAITING TACTICAL ANALYSIS...</div>
+                <div class="terminalLine">&nbsp;</div>
+                <div class="terminalLine">ENEMY FLEET DETECTED AT COORDINATES:</div>
+                <div class="terminalLine">- BATTLESHIP: D4-D8 (VERTICAL)</div>
+                <div class="terminalLine">- DESTROYER: F2-G2 (HORIZONTAL)</div>
+                <div class="terminalLine">- CARRIER: B6-B10 (VERTICAL)</div>
+                <div class="terminalLine">&nbsp;</div>
+                <div class="terminalLine terminalWarning">RECOMMENDED ACTION: FIRE AT D5</div>
+                <div class="terminalLine">&nbsp;</div>
+                <div class="terminalLine"><span class="terminalPrompt">&gt;</span> <span class="terminalCursor"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Example: How to add messages dynamically
+        function addTerminalMessage(message, type = 'normal') {
+            const output = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = 'terminalLine';
+
+            if (type === 'system') line.classList.add('terminalSystem');
+            if (type === 'warning') line.classList.add('terminalWarning');
+            if (type === 'error') line.classList.add('terminalError');
+            if (type === 'success') line.classList.add('terminalSuccess');
+
+            line.textContent = message;
+
+            // Remove cursor from last line
+            const cursor = output.querySelector('.terminalCursor');
+            if (cursor) cursor.remove();
+
+            output.appendChild(line);
+
+            // Add new cursor
+            const newPromptLine = document.createElement('div');
+            newPromptLine.className = 'terminalLine';
+            newPromptLine.innerHTML = '<span class="terminalPrompt">&gt;</span> <span class="terminalCursor"></span>';
+            output.appendChild(newPromptLine);
+
+            // Auto-scroll to bottom
+            output.parentElement.scrollTop = output.parentElement.scrollHeight;
+        }
+
+        // Example: Simulate AI response
+        function simulateAIResponse() {
+            addTerminalMessage('PROCESSING TACTICAL DATA...', 'system');
+
+            setTimeout(() => {
+                addTerminalMessage('ANALYSIS COMPLETE', 'success');
+                addTerminalMessage(' ');
+                addTerminalMessage('PROBABILITY MATRIX CALCULATED:');
+                addTerminalMessage('- GRID E5: 87% HIT PROBABILITY');
+                addTerminalMessage('- GRID F3: 72% HIT PROBABILITY');
+                addTerminalMessage('- GRID C7: 65% HIT PROBABILITY');
+                addTerminalMessage(' ');
+                addTerminalMessage('OPTIMAL TARGET: E5', 'warning');
+            }, 1500);
+        }
+
+        // Uncomment to test:
+        // setTimeout(simulateAIResponse, 2000);
+    </script>
+</body>
+
+</html>

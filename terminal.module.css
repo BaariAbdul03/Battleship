@@ -1,0 +1,253 @@
+/* Command Terminal - Retro Naval Computer UI */
+
+.terminal {
+  position: relative;
+  background-color: #000000;
+  border: 3px solid #00ff00;
+  border-radius: 4px;
+  padding: 20px;
+  font-family: 'Courier New', monospace;
+  color: #00ff00;
+  overflow: hidden;
+  box-shadow: 
+    0 0 10px rgba(0, 255, 0, 0.3),
+    inset 0 0 20px rgba(0, 255, 0, 0.05);
+  min-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* Scanline effect overlay */
+.terminal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 2;
+  animation: scanline 8s linear infinite;
+}
+
+/* CRT screen flicker */
+.terminal::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 255, 0, 0.02);
+  pointer-events: none;
+  z-index: 1;
+  animation: flicker 0.15s infinite;
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(10px);
+  }
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.27861;
+  }
+  5% {
+    opacity: 0.34769;
+  }
+  10% {
+    opacity: 0.23604;
+  }
+  15% {
+    opacity: 0.90626;
+  }
+  20% {
+    opacity: 0.18128;
+  }
+  25% {
+    opacity: 0.83891;
+  }
+  30% {
+    opacity: 0.65583;
+  }
+  35% {
+    opacity: 0.67807;
+  }
+  40% {
+    opacity: 0.26559;
+  }
+  45% {
+    opacity: 0.84693;
+  }
+  50% {
+    opacity: 0.96019;
+  }
+  55% {
+    opacity: 0.08594;
+  }
+  60% {
+    opacity: 0.20313;
+  }
+  65% {
+    opacity: 0.71988;
+  }
+  70% {
+    opacity: 0.53455;
+  }
+  75% {
+    opacity: 0.37288;
+  }
+  80% {
+    opacity: 0.71428;
+  }
+  85% {
+    opacity: 0.70419;
+  }
+  90% {
+    opacity: 0.7003;
+  }
+  95% {
+    opacity: 0.36108;
+  }
+  100% {
+    opacity: 0.24387;
+  }
+}
+
+/* Terminal header */
+.terminalHeader {
+  position: relative;
+  z-index: 3;
+  border-bottom: 1px solid #00ff00;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 5px #00ff00;
+}
+
+/* Terminal content area */
+.terminalContent {
+  position: relative;
+  z-index: 3;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Message lines */
+.terminalLine {
+  margin-bottom: 8px;
+  text-shadow: 0 0 3px #00ff00;
+}
+
+/* Typing cursor */
+.terminalCursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background-color: #00ff00;
+  margin-left: 2px;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Prompt style */
+.terminalPrompt {
+  color: #00ff00;
+  font-weight: bold;
+  text-shadow: 0 0 5px #00ff00;
+}
+
+/* Different message types */
+.terminalSystem {
+  color: #00ff00;
+  opacity: 0.8;
+}
+
+.terminalWarning {
+  color: #ffff00;
+  text-shadow: 0 0 5px #ffff00;
+}
+
+.terminalError {
+  color: #ff0000;
+  text-shadow: 0 0 5px #ff0000;
+}
+
+.terminalSuccess {
+  color: #00ff00;
+  font-weight: bold;
+  text-shadow: 0 0 8px #00ff00;
+}
+
+/* Scrollbar styling */
+.terminal::-webkit-scrollbar {
+  width: 10px;
+}
+
+.terminal::-webkit-scrollbar-track {
+  background: #000000;
+  border-left: 1px solid #00ff00;
+}
+
+.terminal::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  box-shadow: 0 0 5px #00ff00;
+}
+
+.terminal::-webkit-scrollbar-thumb:hover {
+  background: #00cc00;
+}
+
+/* Glow effect on hover */
+.terminal:hover {
+  box-shadow: 
+    0 0 20px rgba(0, 255, 0, 0.5),
+    inset 0 0 30px rgba(0, 255, 0, 0.08);
+}
+
+/* Loading animation */
+.terminalLoading {
+  position: relative;
+  z-index: 3;
+  display: inline-block;
+}
+
+.terminalLoading::after {
+  content: '...';
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    content: '.';
+  }
+  33% {
+    content: '..';
+  }
+  66% {
+    content: '...';
+  }
+}

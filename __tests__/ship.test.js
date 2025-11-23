@@ -1,22 +1,22 @@
-const Ship = require("../ship");
+import Ship from "../ship.js";
 
 test('create a ship with the right length', () => {
     const ship = Ship(3);
     expect(ship.length).toBe(3);
 });
 
-test('ship starts with 0 hits', () => {
+test('ship is not sunk initially', () => {
     const ship = Ship(3);
-    expect(ship.hits).toBe(0);
+    expect(ship.isSunk()).toBe(false);
 });
 
-test('ship is hit once', () => {
+test('ship is hit', () => {
     const ship = Ship(3);
     ship.hit();
     expect(ship.hits).toBe(1);
 });
 
-test('ship has sunk', () => {
+test('ship is sunk when hits equal length', () => {
     const ship = Ship(2);
     ship.hit();
     ship.hit();

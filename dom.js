@@ -44,19 +44,25 @@ const renderBoards = (humanBoard, computerBoard) => {
   }
 };
 
-const handleAttack = (game) => {
+const setupEventListeners = (callback) => {
   const computerGrid = document.getElementById('computer-board');
   computerGrid.addEventListener('click', (e) => {
     const cell = e.target.closest('.cell');
-    if (cell && !cell.classList.contains('hit') && !cell.classList.contains('miss') && !game.isGameOver()) { // Use game.isGameOver()
+    if (cell && !cell.classList.contains('hit') && !cell.classList.contains('miss')) {
       const x = parseInt(cell.dataset.x);
       const y = parseInt(cell.dataset.y);
-      console.log("Clicked cell at:", [x, y]);
       if (!isNaN(x) && !isNaN(y)) {
-        game.playTurn([x, y]);
+        callback([x, y]);
       }
     }
   });
 };
 
-export { renderBoards, handleAttack };
+const updateCommentary = (text) => {
+  const commentaryElement = document.getElementById('commentary-box');
+  if (commentaryElement) {
+    commentaryElement.textContent = text;
+  }
+};
+
+export { renderBoards, setupEventListeners, updateCommentary };

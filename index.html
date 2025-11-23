@@ -1,55 +1,753 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <style>
-.grid {
-  display: grid;
-  grid-template-columns: repeat(10, 30px);
-  gap: 1px;
-  background: transparent;
-  flex-direction: row;
-  flex-wrap: wrap;
-}
-.cell {
-  width: 30px;
-  height: 30px;
-  background: lightblue;
-  border: 1px solid black;
-}
-.ship { background: gray; }
-.hit { background: orange; }
-.sunk { background: red; }
-.miss { background: white; }
 
-#game-status {
-  margin-top: 10px;
-  font-size: 24px;
-  color: green;
-  text-align: center;
-  padding: 10px;
-  background-color: #e0e0e0;
-  border-radius: 5px;
-  display: none; /* Hide initially */
-}
-.game-over #game-status {
-  display: block; /* Show when game is over */
-}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battleship - AI Commander</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      animation: bgPulse 10s ease-in-out infinite;
+    }
+
+    @keyframes bgPulse {
+
+      0%,
+      100% {
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    #game-container {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 25px;
+      padding: 45px;
+      box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.4),
+        0 0 50px rgba(0, 255, 255, 0.2);
+      max-width: 950px;
+      width: 100%;
+      position: relative;
+      animation: containerFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes containerFloat {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    h1 {
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 35px;
+      font-size: 2.8em;
+      font-weight: 900;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      letter-spacing: 2px;
+      animation: titleGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes titleGlow {
+
+      0%,
+      100% {
+        filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5));
+      }
+
+      50% {
+        filter: drop-shadow(0 0 20px rgba(118, 75, 162, 0.8));
+      }
+    }
+
+    .boards-container {
+      display: flex;
+      justify-content: space-around;
+      gap: 40px;
+      margin-bottom: 35px;
+      flex-wrap: wrap;
+    }
+
+    .board-section {
+      flex: 1;
+      min-width: 330px;
+      animation: slideIn 0.6s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 18px;
+      font-size: 1.4em;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Grid Coordinates */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      grid-template-rows: 30px 1fr;
+      gap: 5px;
+    }
+
+    .grid-header {
+      display: grid;
+      grid-template-columns: repeat(10, 34px);
+      /* Match cell width + gap */
+      gap: 2px;
+      margin-left: 2px;
+    }
+
+    .grid-header span {
+      text-align: center;
+      font-weight: bold;
+      color: #555;
+      font-size: 0.9em;
+    }
+
+    .grid-sidebar {
+      display: grid;
+      grid-template-rows: repeat(10, 34px);
+      /* Match cell height + gap */
+      gap: 2px;
+      margin-top: 2px;
+    }
+
+    .grid-sidebar span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #555;
+      font-size: 0.9em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(10, 32px);
+      gap: 2px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      width: fit-content;
+      padding: 8px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .cell {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cell::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.6);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .cell:hover {
+      transform: scale(1.15) rotate(5deg);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.8), 0 0 40px rgba(102, 126, 234, 0.4);
+      z-index: 10;
+    }
+
+    .cell:active::before {
+      width: 100%;
+      height: 100%;
+    }
+
+    .ship {
+      background: linear-gradient(135deg, #636363 0%, #a2ab58 100%);
+      border-color: #444;
+      animation: shipPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes shipPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 5px rgba(162, 171, 88, 0.5);
+      }
+
+      50% {
+        box-shadow: 0 0 15px rgba(162, 171, 88, 0.8);
+      }
+    }
+
+    .hit {
+      background: linear-gradient(135deg, #ff9a56 0%, #ff6a00 100%);
+      border-color: #ff4500;
+      animation: hitExplosion 0.6s ease-out, hitGlow 1.5s ease-in-out infinite;
+    }
+
+    @keyframes hitExplosion {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+
+      50% {
+        transform: scale(1.3);
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes hitGlow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 10px rgba(255, 106, 0, 0.8);
+      }
+
+      50% {
+        box-shadow: 0 0 25px rgba(255, 106, 0, 1), 0 0 40px rgba(255, 154, 86, 0.6);
+      }
+    }
+
+    .sunk {
+      background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+      border-color: #c0392b;
+      animation: sunkExplosion 0.8s ease-out, sunkPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes sunkExplosion {
+      0% {
+        transform: scale(0.3) rotate(0deg);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(1.4) rotate(180deg);
+      }
+
+      100% {
+        transform: scale(1) rotate(360deg);
+        opacity: 1;
+      }
+    }
+
+    @keyframes sunkPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 15px rgba(235, 51, 73, 1);
+      }
+
+      50% {
+        box-shadow: 0 0 30px rgba(235, 51, 73, 1), 0 0 50px rgba(244, 92, 67, 0.8);
+      }
+    }
+
+    .miss {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+      border-color: #bbb;
+      animation: missRipple 0.6s ease-out;
+      position: relative;
+    }
+
+    @keyframes missRipple {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+      }
+    }
+
+    /* Setup Phase Styles */
+    #setup-phase {
+      display: none;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 15px;
+      border: 2px dashed rgba(102, 126, 234, 0.5);
+    }
+
+    .setup-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      font-size: 0.9em;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: #2c3e50;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #ships-to-place {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .ship-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .ship-item.current {
+      background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, transparent 100%);
+      border-left: 4px solid #764ba2;
+    }
+
+    .ship-item.placed {
+      opacity: 0.6;
+      background: rgba(46, 204, 113, 0.2);
+    }
+
+    .ship-symbol {
+      font-size: 1.5em;
+      margin-right: 10px;
+    }
+
+    .ship-name {
+      flex: 1;
+      font-weight: bold;
+    }
+
+    .ship-length {
+      font-size: 0.8em;
+      color: #666;
+    }
+
+    .checkmark {
+      color: #27ae60;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+
+    /* Audio Controls */
+    #audio-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 8px;
+      border-radius: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+    }
+
+    .audio-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2em;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .audio-btn:hover {
+      opacity: 1;
+    }
+
+    /* Preview Styles */
+    .cell.preview {
+      background: rgba(102, 126, 234, 0.5) !important;
+    }
+
+    .cell.preview.invalid {
+      background: rgba(231, 76, 60, 0.5) !important;
+      cursor: not-allowed;
+    }
+
+    /* Turn Indicator */
+    .turn-indicator {
+      text-align: center;
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: #764ba2;
+      height: 20px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .active-turn {
+      opacity: 1;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.6;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.6;
+      }
+    }
+
+    #game-status {
+      margin-top: 25px;
+      font-size: 28px;
+      color: #27ae60;
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-radius: 15px;
+      display: none;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      animation: statusBounce 0.6s ease-out;
+    }
+
+    @keyframes statusBounce {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    .game-over #game-status {
+      display: block;
+    }
+
+    #ai-terminal {
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+      border: 3px solid #00ff41;
+      border-radius: 15px;
+      padding: 25px;
+      margin-top: 35px;
+      box-shadow:
+        0 0 30px rgba(0, 255, 65, 0.4),
+        inset 0 0 20px rgba(0, 255, 65, 0.1);
+      position: relative;
+      overflow: hidden;
+      animation: terminalGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes terminalGlow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 30px rgba(0, 255, 65, 0.4), inset 0 0 20px rgba(0, 255, 65, 0.1);
+      }
+
+      50% {
+        box-shadow: 0 0 50px rgba(0, 255, 65, 0.6), inset 0 0 30px rgba(0, 255, 65, 0.2);
+      }
+    }
+
+    #ai-terminal::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(0deg,
+          rgba(0, 255, 65, 0.05) 0px,
+          rgba(0, 255, 65, 0.05) 1px,
+          transparent 1px,
+          transparent 3px);
+      pointer-events: none;
+      animation: scanlines 8s linear infinite;
+    }
+
+    @keyframes scanlines {
+      0% {
+        transform: translateY(0);
+      }
+
+      100% {
+        transform: translateY(100%);
+      }
+    }
+
+    #ai-terminal h3 {
+      color: #00ff41;
+      font-family: 'Courier New', monospace;
+      margin-bottom: 15px;
+      font-size: 1.2em;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+      animation: headerFlicker 3s ease-in-out infinite;
+    }
+
+    @keyframes headerFlicker {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.9;
+      }
+    }
+
+    #commentary-box {
+      color: #00ff41;
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      line-height: 1.8;
+      min-height: 70px;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+      animation: textGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes textGlow {
+
+      0%,
+      100% {
+        text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+      }
+
+      50% {
+        text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+      }
+    }
+
+    #commentary-box::after {
+      content: '█';
+      animation: blink 1s step-end infinite;
+      margin-left: 3px;
+    }
+
+    @keyframes blink {
+
+      0%,
+      50% {
+        opacity: 1;
+      }
+
+      51%,
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* Particle effect for hits */
+    @keyframes particle {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(0);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
+
 <body>
-  <h2>Your Board</h2>
-  <div id="human-board" class="grid"></div>
-  <h2>Enemy Board</h2>
-  <div id="computer-board" class="grid"></div>
-  <div id="game-status"></div> 
-  <script type="module">
-    import Game from './game.js';
-    import { handleAttack } from './dom.js';
-    document.addEventListener('DOMContentLoaded', () => {
-      const game = Game();
-      game.start();
-      handleAttack(game);
-    });
-  </script>
+  <div id="game-container">
+    <div id="audio-controls">
+      <button id="mute-btn" class="audio-btn" title="Toggle Mute">🔊</button>
+      <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5" style="width: 60px;">
+    </div>
+
+    <h1>⚓ BATTLESHIP COMMAND ⚓</h1>
+
+    <div class="boards-container">
+      <!-- Human Board Section -->
+      <div class="board-section">
+        <h2>🛡️ Your Fleet</h2>
+        <div class="turn-indicator" id="human-turn-indicator">YOUR TURN</div>
+
+        <div class="grid-container">
+          <div></div> <!-- Empty top-left corner -->
+          <div class="grid-header">
+            <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
+            <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+          </div>
+          <div class="grid-sidebar">
+            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+            <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+          </div>
+          <div id="human-board" class="grid"></div>
+        </div>
+      </div>
+
+      <!-- Right Side: Swaps between Setup and Computer Board -->
+      <div class="board-section">
+
+        <!-- Battle Phase: Computer Board -->
+        <div id="battle-phase">
+          <h2>🎯 Enemy Waters</h2>
+          <div class="turn-indicator" id="computer-turn-indicator">COMPUTER THINKING...</div>
+
+          <div class="grid-container">
+            <div></div>
+            <div class="grid-header">
+              <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
+              <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+            </div>
+            <div class="grid-sidebar">
+              <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+              <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+            </div>
+            <div id="computer-board" class="grid"></div>
+          </div>
+        </div>
+
+        <!-- Setup Phase: Ship Selection -->
+        <div id="setup-phase">
+          <h2>🚢 Deploy Fleet</h2>
+          <div class="setup-controls">
+            <button id="rotate-btn" class="btn btn-secondary">Rotate <span id="orientation-display">→</span></button>
+            <button id="auto-place-btn" class="btn btn-secondary">Auto Place 🎲</button>
+          </div>
+
+          <div id="ships-to-place">
+            <!-- Ships injected by JS -->
+          </div>
+
+          <div style="text-align: center; margin-top: 20px;">
+            <p style="margin-bottom: 10px;">Placing: <strong id="current-ship-name">-</strong> (<span
+                id="current-ship-length">-</span>)</p>
+            <button id="start-game-btn" class="btn btn-primary" disabled>Start Battle ⚔️</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="game-status">
+      <div id="status-message"></div>
+      <button id="play-again-btn" class="btn btn-primary" style="margin-top: 15px;">Play Again 🔄</button>
+    </div>
+
+    <div id="ai-terminal">
+      <h3>🤖 AI Commander Terminal</h3>
+      <div id="commentary-box">INITIALIZING...</div>
+    </div>
+  </div>
+
+  <script type="module" src="./index.js"></script>
 </body>
+
 </html>

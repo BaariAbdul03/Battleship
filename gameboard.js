@@ -11,14 +11,14 @@ const Gameboard = () => {
       const [x, y] = coords;
       const size = 10;
       if (orientation === 'horizontal') {
-        if (y + ship.length > size) throw new Error("Ship exceeds board horizontally");
-        for (let i = 0; i < ship.length; i++) {
-          shipCoords.push([x, y + i]);
-        }
-      } else if (orientation === 'vertical') {
-        if (x + ship.length > size) throw new Error("Ship exceeds board vertically");
+        if (x + ship.length > size) throw new Error("Ship exceeds board horizontally");
         for (let i = 0; i < ship.length; i++) {
           shipCoords.push([x + i, y]);
+        }
+      } else if (orientation === 'vertical') {
+        if (y + ship.length > size) throw new Error("Ship exceeds board vertically");
+        for (let i = 0; i < ship.length; i++) {
+          shipCoords.push([x, y + i]);
         }
       }
       ships.push({ ship, coords: shipCoords });
@@ -47,6 +47,11 @@ const Gameboard = () => {
     },
     allSunk() {
       return ships.every(({ ship }) => ship.isSunk());
+    },
+    reset() {
+      ships.length = 0;
+      missedAttacks.length = 0;
+      attackedCoords.length = 0;
     }
   };
 };
