@@ -705,49 +705,38 @@
             <div class="grid-header">
               <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
               <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+              <div class="setup-controls">
+                <button id="rotate-btn" class="btn btn-secondary">Rotate <span
+                    id="orientation-display">→</span></button>
+                <button id="auto-place-btn" class="btn btn-secondary">Auto Place 🎲</button>
+              </div>
+
+              <div id="ships-to-place">
+                <!-- Ships injected by JS -->
+              </div>
+
+              <div style="text-align: center; margin-top: 20px;">
+                <p style="margin-bottom: 10px;">Placing: <strong id="current-ship-name">-</strong> (<span
+                    id="current-ship-length">-</span>)</p>
+                <button id="start-game-btn" class="btn btn-primary" disabled>Start Battle ⚔️</button>
+              </div>
             </div>
-            <div class="grid-sidebar">
-              <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-              <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-            </div>
-            <div id="computer-board" class="grid"></div>
+
           </div>
         </div>
 
-        <!-- Setup Phase: Ship Selection -->
-        <div id="setup-phase">
-          <h2>🚢 Deploy Fleet</h2>
-          <div class="setup-controls">
-            <button id="rotate-btn" class="btn btn-secondary">Rotate <span id="orientation-display">→</span></button>
-            <button id="auto-place-btn" class="btn btn-secondary">Auto Place 🎲</button>
-          </div>
-
-          <div id="ships-to-place">
-            <!-- Ships injected by JS -->
-          </div>
-
-          <div style="text-align: center; margin-top: 20px;">
-            <p style="margin-bottom: 10px;">Placing: <strong id="current-ship-name">-</strong> (<span
-                id="current-ship-length">-</span>)</p>
-            <button id="start-game-btn" class="btn btn-primary" disabled>Start Battle ⚔️</button>
-          </div>
+        <div id="game-status">
+          <div id="status-message"></div>
+          <button id="play-again-btn" class="btn btn-primary" style="margin-top: 15px;">Play Again 🔄</button>
         </div>
 
+        <div id="ai-terminal">
+          <h3>🤖 AI Commander Terminal</h3>
+          <div id="commentary-box">INITIALIZING...</div>
+        </div>
       </div>
-    </div>
 
-    <div id="game-status">
-      <div id="status-message"></div>
-      <button id="play-again-btn" class="btn btn-primary" style="margin-top: 15px;">Play Again 🔄</button>
-    </div>
-
-    <div id="ai-terminal">
-      <h3>🤖 AI Commander Terminal</h3>
-      <div id="commentary-box">INITIALIZING...</div>
-    </div>
-  </div>
-
-  <script type="module" src="./index.js"></script>
+      <script type="module" src="./index.js"></script>
 </body>
 
 </html>
