@@ -29,9 +29,9 @@ const Game = () => {
 
                 try {
                     // Check if placement is valid (no overlaps)
-                    const wouldOverlap = checkOverlap(board, Ship(shipType.length), [x, y], orientation);
+                    const wouldOverlap = checkOverlap(board, Ship(shipType.length, shipType.name), [x, y], orientation);
                     if (!wouldOverlap) {
-                        board.placeShip(Ship(shipType.length), [x, y], orientation);
+                        board.placeShip(Ship(shipType.length, shipType.name), [x, y], orientation);
                         placed = true;
                     }
                 } catch (e) {
@@ -102,7 +102,7 @@ const Game = () => {
             if (currentShipIndex >= shipsToPlace.length) return { success: false, message: 'All ships placed' };
 
             const shipType = shipsToPlace[currentShipIndex];
-            const ship = Ship(shipType.length);
+            const ship = Ship(shipType.length, shipType.name);
 
             try {
                 const wouldOverlap = checkOverlap(human.getBoard(), ship, coords, orientation);
@@ -141,7 +141,7 @@ const Game = () => {
             currentPlayer = human;
             return true;
         },
-        async playRound(coords) {
+        playRound(coords, onCommentaryReady) {
             if (gamePhase !== 'playing') return { status: 'invalid', message: 'Game not started' };
             if (gameOver) return { status: 'game_over' };
 
@@ -152,31 +152,31 @@ const Game = () => {
                 if (alreadyAttacked) {
                     return { status: 'invalid', message: 'Already attacked' };
                 }
-                enemyBoard.receiveAttack(coords);
+                const attackResult = enemyBoard.receiveAttack(coords);
 
                 if (enemyBoard.allSunk()) {
                     gameOver = true;
                     winner = human;
                     gamePhase = 'gameover';
-                    return { status: 'win', winner: 'human' };
+                    return { status: 'win', winner: 'human', attackResult };
                 }
 
                 switchTurn();
-                return { status: 'continue', currentPlayer: 'computer' };
+                return { status: 'continue', currentPlayer: 'computer', attackResult };
             } else {
                 // Computer turn
-                const result = await computerAI.fire();
+                const { coords: attackCoords, result: attackResult } = computerAI.fire(onCommentaryReady);
                 const enemyBoard = human.getBoard();
 
                 if (enemyBoard.allSunk()) {
                     gameOver = true;
                     winner = computerPlayer;
                     gamePhase = 'gameover';
-                    return { status: 'win', winner: 'computer', commentary: result.commentary, coords: result.coords };
+                    return { status: 'win', winner: 'computer', coords: attackCoords, attackResult };
                 }
 
                 switchTurn();
-                return { status: 'continue', currentPlayer: 'human', commentary: result.commentary, coords: result.coords };
+                return { status: 'continue', currentPlayer: 'human', coords: attackCoords, attackResult };
             }
         },
         resetGame() {

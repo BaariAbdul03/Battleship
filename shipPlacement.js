@@ -1,16 +1,18 @@
 import { FLEET } from './shipConfig.js';
 
-const ShipPlacementUI = (game, onComplete) => {
+const ShipPlacementUI = (game, onComplete, updateCommentary) => {
     let currentOrientation = 'horizontal';
     let previewCells = [];
 
     const setupPhaseEl = document.getElementById('setup-phase');
     const battlePhaseEl = document.getElementById('battle-phase');
     const humanBoardEl = document.getElementById('human-board');
+    const shipInfoEl = document.querySelector('.current-ship-info');
 
     const showSetupPhase = () => {
         setupPhaseEl.style.display = 'block';
         battlePhaseEl.style.display = 'none';
+        if (shipInfoEl) shipInfoEl.style.display = 'block';
         renderShipList();
         setupBoardListeners();
     };
@@ -23,22 +25,24 @@ const ShipPlacementUI = (game, onComplete) => {
     const renderShipList = () => {
         const shipListEl = document.getElementById('ships-to-place');
         const currentShip = game.getCurrentShipToPlace();
+        const placedShipNames = game.getHumanPlayer().getBoard().getShips().map(s => s.ship.name);
 
         if (!currentShip) {
             shipListEl.innerHTML = '<p class="all-placed">✅ All ships placed!</p>';
             document.getElementById('start-game-btn').disabled = false;
+            if (shipInfoEl) shipInfoEl.style.display = 'none';
             return;
         }
 
-        const shipsHTML = FLEET.map((ship, index) => {
-            const placed = index < (FLEET.length - game.getShipsToPlace().length + (FLEET.findIndex(s => s === currentShip)));
-            const current = ship === currentShip;
+        const shipsHTML = FLEET.map(ship => {
+            const isPlaced = placedShipNames.includes(ship.name);
+            const isCurrent = ship.name === currentShip.name && !isPlaced;
             return `
-                <div class="ship-item ${placed ? 'placed' : ''} ${current ? 'current' : ''}">
+                <div class="ship-item ${isPlaced ? 'placed' : ''} ${isCurrent ? 'current' : ''}">
                     <span class="ship-symbol">${ship.symbol}</span>
                     <span class="ship-name">${ship.name}</span>
                     <span class="ship-length">(${ship.length} cells)</span>
-                    ${placed ? '<span class="checkmark">✓</span>' : ''}
+                    ${isPlaced ? '<span class="checkmark">✓</span>' : ''}
                 </div>
             `;
         }).join('');
@@ -46,6 +50,7 @@ const ShipPlacementUI = (game, onComplete) => {
         shipListEl.innerHTML = shipsHTML;
         document.getElementById('current-ship-name').textContent = currentShip.name;
         document.getElementById('current-ship-length').textContent = currentShip.length;
+        document.getElementById('start-game-btn').disabled = true;
     };
 
     const setupBoardListeners = () => {
@@ -117,21 +122,32 @@ const ShipPlacementUI = (game, onComplete) => {
         const result = game.placeHumanShip([x, y], currentOrientation);
 
         if (result.success) {
-            // Play click sound
             if (window.gameAudio) window.gameAudio.playClick();
-
-            // Update UI
             renderHumanBoard();
             renderShipList();
             clearPreview();
 
             if (result.shipsRemaining === 0) {
-                // All ships placed
                 document.getElementById('start-game-btn').disabled = false;
+                updateCommentary('SYSTEM', 'All ships positioned. Ready to engage the enemy!');
             }
         } else {
-            // Show error (could add visual feedback)
-            console.log(result.message);
+            // Provide visual feedback for invalid placement
+            previewCells.forEach(cell => {
+                if (cell) {
+                    cell.classList.add('invalid');
+                }
+            });
+            setTimeout(() => {
+                previewCells.forEach(cell => {
+                    if (cell) {
+                        cell.classList.remove('invalid');
+                    }
+                });
+            }, 300);
+
+            // Show error message in commentary
+            updateCommentary('SYSTEM', `Placement Error: ${result.message}`);
         }
     };
 

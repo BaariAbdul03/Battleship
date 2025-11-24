@@ -3,13 +3,16 @@ import Game from './game.js';
 import { renderBoards, setupEventListeners, updateCommentary } from './dom.js';
 import AudioManager from './audio.js';
 import ShipPlacementUI from './shipPlacement.js';
+import CommentarySystem from './CommentarySystem.js';
 
 const init = () => {
     const game = Game();
     const human = game.getHumanPlayer();
     const computer = game.getComputerPlayer();
     const audio = AudioManager();
+    const commentary = CommentarySystem();
     let shipPlacementUI;
+    let isCommenting = false;
 
     const updateTurnIndicators = () => {
         const humanIndicator = document.getElementById('human-turn-indicator');
@@ -23,9 +26,24 @@ const init = () => {
         } else {
             humanIndicator.classList.remove('active-turn');
             computerIndicator.classList.add('active-turn');
+            computerIndicator.textContent = "COMPUTER'S TURN";
             humanIndicator.textContent = "WAITING...";
-            computerIndicator.textContent = "COMPUTER THINKING...";
         }
+    };
+
+    const displayCommentary = async (speaker, text) => {
+        while (isCommenting) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        isCommenting = true;
+        
+        const speakerElement = document.getElementById('commentary-speaker');
+        if (speakerElement) {
+            speakerElement.textContent = speaker ? `${speaker}:` : '';
+        }
+        updateCommentary(text);
+        
+        isCommenting = false;
     };
 
     const updateUI = () => {
@@ -33,80 +51,105 @@ const init = () => {
         updateTurnIndicators();
 
         if (game.isGameOver()) {
-            document.body.classList.add('game-over');
             const winner = game.getWinner();
-            const message = winner.getType() === 'human' ? "You win!" : "Computer wins!";
-            document.getElementById('status-message').textContent = message;
+            const winnerMessage = winner.getType() === 'human' ? 'YOU WIN!' : 'COMPUTER WINS!';
+            document.getElementById('status-message').textContent = winnerMessage;
             document.getElementById('game-status').style.display = 'block';
+            document.body.classList.add('game-over');
 
-            // Play victory or defeat sound
             if (winner.getType() === 'human') {
                 audio.playVictory();
+                displayCommentary('SYSTEM', 'Congratulations, Commander! All enemy ships have been neutralized.');
             } else {
                 audio.playDefeat();
+                displayCommentary('SYSTEM', 'A tough loss, Commander. We\'ll get them next time.');
             }
         }
     };
 
-    const handleHumanTurn = async (coords) => {
-        if (game.getGamePhase() !== 'playing') return;
-        if (game.isGameOver() || game.getCurrentPlayer() !== human) return;
+    const handleHumanTurn = (coords) => {
+        if (game.getGamePhase() !== 'playing' || game.isGameOver() || game.getCurrentPlayer() !== human) return;
 
-        const result = await game.playRound(coords);
+        displayCommentary('PLAYER', `Firing at [${coords[0]}, ${coords[1]}]...`);
+
+        const result = game.playRound(coords);
         if (result.status === 'invalid') {
-            // Optional: Play error sound
             return;
         }
 
-        // Play sound based on result
-        const computerBoard = computer.getBoard();
-        const isMiss = computerBoard.getMissedAttacks().some(([x, y]) => x === coords[0] && y === coords[1]);
+        updateUI();
+        handleHumanCommentary(result.attackResult, coords);
 
-        if (!isMiss) {
-            // It's a hit - check if ship was sunk
-            const ships = computerBoard.getShips();
-            const hitShip = ships.find(({ coords: shipCoords }) =>
-                shipCoords.some(([sx, sy]) => sx === coords[0] && sy === coords[1])
-            );
+        if (result.status !== 'game_over' && result.status !== 'win') {
+            setTimeout(handleComputerTurn, 1500);
+        }
+    };
 
-            if (hitShip && hitShip.ship.isSunk()) {
+    const handleHumanCommentary = (attackResult, coords) => {
+        const onCommentaryReady = (commentary) => {
+            if (commentary) {
+                displayCommentary('COMPUTER', commentary);
+            }
+        };
+
+        if (attackResult.status === 'hit') {
+            if (attackResult.sunk) {
                 audio.playSink();
+                commentary.getCommentary('player_sink', {
+                    shipType: attackResult.ship.name || 'ship',
+                    coords: `[${coords[0]}, ${coords[1]}]`
+                }).then(onCommentaryReady);
             } else {
                 audio.playHit();
+                commentary.getCommentary('player_hit', {
+                    coords: `[${coords[0]}, ${coords[1]}]`,
+                    ship: attackResult.ship
+                }).then(onCommentaryReady);
             }
         } else {
             audio.playMiss();
+            commentary.getCommentary('player_miss', {
+                coords: `[${coords[0]}, ${coords[1]}]`
+            }).then(onCommentaryReady);
         }
+    };
 
-        updateUI();
+    const showThinking = async () => {
+        const humanBoardEl = document.getElementById('human-board');
+        const cells = humanBoardEl.querySelectorAll('.cell');
+        const delay = 15;
 
-        if (result.status !== 'game_over' && result.status !== 'win') {
-            // Trigger computer turn with a small delay for better UX
-            setTimeout(handleComputerTurn, 1000);
+        const cellOrder = Array.from(Array(100).keys()).sort(() => Math.random() - 0.5);
+
+        for (let i = 0; i < cellOrder.length; i++) {
+            const cellIndex = cellOrder[i];
+            const cell = cells[cellIndex];
+
+            if (cell && !cell.classList.contains('hit') && !cell.classList.contains('miss')) {
+                cell.classList.add('thinking-cell');
+                await new Promise(resolve => setTimeout(resolve, delay));
+                cell.classList.remove('thinking-cell');
+            }
         }
     };
 
     const handleComputerTurn = async () => {
         if (game.isGameOver()) return;
 
-        const result = await game.playRound();
+        displayCommentary('COMPUTER', 'Analyzing target grid...');
+        await showThinking();
 
-        if (result.commentary) {
-            updateCommentary(result.commentary);
-        }
+        const onCommentaryReady = (commentary) => {
+            if (commentary) {
+                displayCommentary('COMPUTER', commentary);
+            }
+        };
+        
+        const result = game.playRound(undefined, onCommentaryReady);
 
-        // Play sound for computer's attack
-        if (result.coords) {
-            const humanBoard = human.getBoard();
-            const isMiss = humanBoard.getMissedAttacks().some(([x, y]) => x === result.coords[0] && y === result.coords[1]);
-
-            if (!isMiss) {
-                const ships = humanBoard.getShips();
-                const hitShip = ships.find(({ coords: shipCoords }) =>
-                    shipCoords.some(([sx, sy]) => sx === result.coords[0] && sy === result.coords[1])
-                );
-
-                if (hitShip && hitShip.ship.isSunk()) {
+        if (result.attackResult) {
+            if (result.attackResult.status === 'hit') {
+                if (result.attackResult.sunk) {
                     audio.playSink();
                 } else {
                     audio.playHit();
@@ -134,44 +177,30 @@ const init = () => {
         });
     };
 
-    // Initialize Game
     const startGame = () => {
-        // Render empty boards first to create cells for ShipPlacementUI
         renderBoards(human.getBoard(), computer.getBoard());
 
-        // Initialize Ship Placement UI
         shipPlacementUI = ShipPlacementUI(game, () => {
-            // Callback when placement is done and game starts
             updateUI();
             setupEventListeners(handleHumanTurn);
-            updateCommentary("Systems online. Enemy fleet detected. Awaiting orders, Commander.");
-        });
+            displayCommentary("SYSTEM", "Systems online. Enemy fleet detected. Awaiting orders, Commander.");
+        }, (speaker, text) => displayCommentary(speaker, text));
 
         shipPlacementUI.show();
         setupAudioControls();
-
-        // Make audio globally accessible
         window.gameAudio = audio;
     };
 
     const resetGame = () => {
-        // Reset game state
         game.resetGame();
-
-        // Reset UI
         document.body.classList.remove('game-over');
         document.getElementById('game-status').style.display = 'none';
         document.getElementById('human-turn-indicator').textContent = "YOUR TURN";
         document.getElementById('computer-turn-indicator').textContent = "WAITING...";
         document.getElementById('human-turn-indicator').classList.remove('active-turn');
         document.getElementById('computer-turn-indicator').classList.remove('active-turn');
-
-        // Reset commentary
-        updateCommentary("INITIALIZING...");
-
-        // Restart setup
+        displayCommentary("SYSTEM", "INITIALIZING...");
         startGame();
-
         if (window.gameAudio) window.gameAudio.playClick();
     };
 

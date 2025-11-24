@@ -2,75 +2,123 @@ import CommentarySystem from './CommentarySystem.js';
 
 const SmartOpponent = (enemyBoard) => {
     const size = 10;
-    const targetStack = [];
-    let lastMove = null;
+    let mode = 'hunt'; // 'hunt' or 'target'
+    let targetQueue = [];
+    let firstHit = null;
+    let knownHits = [];
+    let currentOrientation = null; // null, 'horizontal', or 'vertical'
     const attackedCoords = new Set();
     const commentary = CommentarySystem();
 
-    const fire = async () => {
-        let aiCommentary = null;
-        let move = null;
+    const resetTargeting = () => {
+        mode = 'hunt';
+        targetQueue = [];
+        firstHit = null;
+        knownHits = [];
+        currentOrientation = null;
+    };
 
-        // 1. Process Stack (Target Mode)
-        while (targetStack.length > 0) {
-            const candidate = targetStack.pop();
-            if (!isAlreadyAttacked(candidate[0], candidate[1])) {
-                move = candidate;
-                break;
-            }
-        }
+    const fire = (onCommentaryReady) => {
+        let move = getNextMove();
 
-        // 2. Hunt Mode (if no valid target from stack)
-        if (!move) {
-            move = getRandomMove();
-        }
-
-        // 3. Register move and execute attack
         if (move) {
-            lastMove = move;
             attackedCoords.add(`${move[0]},${move[1]}`);
-
-            // Execute attack and get detailed result
             const result = enemyBoard.receiveAttack(move);
 
-            // 4. Generate Commentary based on result
             if (result.status === 'hit') {
-                // Hit!
-                addNeighborsToStack(move[0], move[1]);
-
+                handleHit(move, result);
                 if (result.sunk) {
-                    const comment = await commentary.getCommentary('sink', {
-                        shipType: result.ship.name,
-                        coords: `[${move[0]}, ${move[1]}]`
-                    });
-                    if (comment) aiCommentary = comment;
+                    commentary.getCommentary('sink', { shipType: result.ship.name, coords: `[${move[0]}, ${move[1]}]` })
+                        .then(onCommentaryReady);
+                    resetTargeting(); // Ship is sunk, go back to hunting
                 } else {
-                    const comment = await commentary.getCommentary('hit', {
-                        coords: `[${move[0]}, ${move[1]}]`,
-                        ship: result.ship
-                    });
-                    if (comment) aiCommentary = comment;
+                    commentary.getCommentary('hit', { coords: `[${move[0]}, ${move[1]}]`, ship: result.ship })
+                        .then(onCommentaryReady);
                 }
             } else {
                 // Miss
-                const comment = await commentary.getCommentary('miss', { coords: `[${move[0]}, ${move[1]}]` });
-                if (comment) aiCommentary = comment;
+                if (mode === 'target') {
+                    if (knownHits.length === 1) {
+                        // If we only had one hit, we guessed the orientation wrong.
+                    }
+                    currentOrientation = null; // Re-evaluate orientation on next hit
+                }
+                commentary.getCommentary('miss', { coords: `[${move[0]}, ${move[1]}]` })
+                    .then(onCommentaryReady);
             }
 
-            return { coords: move, commentary: aiCommentary };
+            return { coords: move, result };
         }
 
-        return { coords: null, commentary: null };
+        return { coords: null, result: null };
     };
 
-    const addNeighborsToStack = (x, y) => {
+    const getNextMove = () => {
+        // 1. Process Target Queue
+        while (targetQueue.length > 0) {
+            const candidate = targetQueue.shift(); // Use shift for FIFO queue behavior
+            if (!isAlreadyAttacked(candidate[0], candidate[1])) {
+                return candidate;
+            }
+        }
+
+        // 2. Hunt Mode (if no valid target from queue)
+        mode = 'hunt';
+        return getRandomMove();
+    };
+
+    const handleHit = (move, result) => {
+        mode = 'target';
+        knownHits.push(move);
+        knownHits.sort((a, b) => a[0] - b[0] || a[1] - b[1]); // Sort hits to find endpoints
+
+        if (knownHits.length === 1) {
+            // First hit, add all neighbors to the queue
+            addNeighborsToQueue(move[0], move[1]);
+        } else {
+            // Second or subsequent hit, determine orientation and refine targets
+            if (!currentOrientation) {
+                if (knownHits[0][0] === knownHits[1][0]) {
+                    currentOrientation = 'vertical';
+                } else if (knownHits[0][1] === knownHits[1][1]) {
+                    currentOrientation = 'horizontal';
+                }
+            }
+
+            // Clear the queue and add only the most logical targets
+            targetQueue = [];
+            const first = knownHits[0];
+            const last = knownHits[knownHits.length - 1];
+
+            if (currentOrientation === 'horizontal') {
+                targetQueue.push([first[0] - 1, first[1]]); // Cell before the first hit
+                targetQueue.push([last[0] + 1, last[1]]);   // Cell after the last hit
+            } else if (currentOrientation === 'vertical') {
+                targetQueue.push([first[0], first[1] - 1]); // Cell above the first hit
+                targetQueue.push([last[0], last[1] + 1]);   // Cell below the last hit
+            }
+        }
+    };
+
+    const addLinearTargets = (x, y) => {
+        if (currentOrientation === 'horizontal') {
+            targetQueue.push([x + 1, y]);
+            targetQueue.push([x - 1, y]);
+        } else if (currentOrientation === 'vertical') {
+            targetQueue.push([x, y + 1]);
+            targetQueue.push([x, y - 1]);
+        }
+    };
+
+
+    const addNeighborsToQueue = (x, y) => {
         const neighbors = [
             [x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]
         ];
-        neighbors.sort(() => Math.random() - 0.5);
+        neighbors.sort(() => Math.random() - 0.5); // Randomize to be less predictable
         neighbors.forEach(([nx, ny]) => {
             if (isValidCoord(nx, ny) && !isAlreadyAttacked(nx, ny)) {
-                targetStack.push([nx, ny]);
+                targetQueue.push([nx, ny]);
             }
         });
     };

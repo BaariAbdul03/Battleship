@@ -661,6 +661,8 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -681,12 +683,12 @@
         <div class="grid-container">
           <div></div> <!-- Empty top-left corner -->
           <div class="grid-header">
-            <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
-            <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span>
+            <span>5</span><span>6</span><span>7</span><span>8</span><span>9</span>
           </div>
           <div class="grid-sidebar">
-            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-            <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span>
+            <span>5</span><span>6</span><span>7</span><span>8</span><span>9</span>
           </div>
           <div id="human-board" class="grid"></div>
         </div>
@@ -702,14 +704,13 @@
 
           <div class="grid-container">
             <div></div>
-            <div class="grid-header">
-              <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
-              <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
-            </div>
-            <div class="grid-sidebar">
-              <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-              <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-            </div>
+                      <div class="grid-header">
+                        <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span>
+                        <span>5</span><span>6</span><span>7</span><span>8</span><span>9</span>
+                      </div>          <div class="grid-sidebar">
+            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span>
+            <span>5</span><span>6</span><span>7</span><span>8</span><span>9</span>
+          </div>
             <div id="computer-board" class="grid"></div>
           </div>
         </div>
@@ -743,6 +744,7 @@
 
     <div id="ai-terminal">
       <h3>🤖 AI Commander Terminal</h3>
+      <div id="commentary-speaker" style="margin-bottom: 8px; font-weight: bold; color: #7dff7d; text-transform: uppercase;"></div>
       <div id="commentary-box">INITIALIZING...</div>
     </div>
   </div>
