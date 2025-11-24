@@ -35,55 +35,71 @@ Ready to command your fleet? Follow these steps to set up Battleship v1.0 on you
 ### Prerequisites
 
 - A modern web browser (Chrome, Firefox, etc.).
-- A local server to handle ES6 modules (e.g., [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) for VS Code, or `http-server` via Node.js).
+- [Node.js](https://nodejs.org/) and npm installed.
 
 ### Installation
 
-1. **Clone the Repository**:
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/your-username/battleship.git
+    cd battleship
+    ```
 
-   ```bash
-   git clone https://github.com/your-username/battleship.git
-   cd battleship
-   ```
+2.  **Install Dependencies**:
+    Run the following command to install the necessary dependencies for both the game and the backend server:
+    ```bash
+    npm install
+    ```
 
-2. **Launch a Local Server**:
+3.  **Set up Environment Variables**:
+    Create a new file named `.env` in the root of the project and add your Gemini API key like this:
+    ```
+    GEMINI_API_KEY=YOUR_API_KEY
+    ```
+    *Note: The `.env` file is included in `.gitignore` to prevent your API key from being committed to the repository.*
 
-   - **Option 1: VS Code with Live Server**  
-     Open the project in VS Code, right-click `index.html`, and select "Open with Live Server".
+4.  **Launch the Application**:
+    You will need to run two processes: the backend server and a simple server for the frontend.
 
-   - **Option 2: Node.js with `http-server`**  
-     Install `http-server` globally:
+    -   **Start the Backend Server**:
+        Open a terminal and run the following command to start the Node.js server:
+        ```bash
+        npm start
+        ```
+        This will start the server on `http://localhost:3000`.
 
-     ```bash
-     npm install -g http-server
-     http-server
-     ```
+    -   **Start the Frontend Server**:
+        In a *second* terminal, run a simple HTTP server to serve the `index.html` file. If you have `live-server` installed, you can run:
+        ```bash
+        live-server
+        ```
+        Or, you can use Python's built-in server:
+        ```bash
+        python -m http.server
+        ```
+        This will typically serve the frontend on `http://localhost:8080` or `http://127.0.0.1:5500` if using VS Code's Live Server.
 
-     Then visit `http://localhost:8080` in your browser.
-
-3. **Start Playing**:
-
-   Open the URL provided by your server (e.g., `http://localhost:3000`) and dive into the game!
+5.  **Start Playing**:
+    Open the URL for your frontend server (e.g., `http://localhost:8080`) in your browser and dive into the game!
 
 ---
 
 ## 🎮 How to Play
 
-1. **Your Fleet**: Your 2-cell ship is placed at `[0, 0]` to `[0, 1]` (gray cells on "Your Board").
-2. **Enemy Fleet**: The computer’s ship is hidden at `[0, 0]` to `[0, 1]` (you’ll need to find it!).
-3. **Take Your Shot**: Click a cell on the "Enemy Board" to attack:
-   - 🟠 Orange for a hit.
-   - ⚪ White for a miss.
-   - 🔴 Red when the ship is fully sunk.
-4. **Computer’s Turn**: The enemy fires back at random locations on your board.
-5. **Victory or Defeat**: The first to sink all opponent ships wins!
-
+1.  **Deploy Your Fleet**: Place all 5 of your ships on "Your Fleet" board. You can place them manually or use the "Auto Place" button.
+2.  **Take Your Shot**: Click a cell on the "Enemy Waters" board to attack.
+    -   🟠 Orange for a hit.
+    -   ⚪ White for a miss.
+    -   🔴 Red when the ship is fully sunk.
+3.  **Computer’s Turn**: The enemy AI will analyze the board and fire back at your fleet.
+4.  **Victory or Defeat**: The first to sink all opponent ships wins!
 ---
 
 ## 🛠️ Technologies Used
 
-- **JavaScript (ES6 Modules)** - Game logic and UI interactions
-- **HTML & CSS** - Layout and styling
+-   **JavaScript (ES6 Modules)** - Game logic and UI interactions
+-   **Node.js & Express.js** - Backend server for secure API calls
+-   **HTML & CSS** - Layout and styling
 
 ---
 

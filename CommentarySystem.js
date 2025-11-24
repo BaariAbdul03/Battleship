@@ -1,61 +1,45 @@
 const CommentarySystem = () => {
-    const API_KEY = 'AIzaSyAjbmuP4p37BpOHihJjzG0NPlCyhnv0nro';
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+    const API_URL = 'http://localhost:3000/api/get-commentary';
 
     const getCommentary = async (event, context) => {
-        // API key check removed - will attempt to call Gemini API
-
-        let prompt = "";
-        switch (event) {
-            case 'game_start':
-                prompt = "You are a witty battleship commander. The game has just started. Give a short, encouraging or intimidating remark to the opponent.";
-                break;
-            case 'hit':
-                const shipInfo = context.ship ? `the enemy's ${context.ship.name}` : 'an enemy ship';
-                prompt = `You are a battleship commander. You just hit ${shipInfo} at ${context.coords}. Make a brief, excited comment.`;
-                break;
-            case 'miss':
-                prompt = `You are a battleship commander. You missed the enemy at ${context.coords}. Make a brief, frustrated or determined comment.`;
-                break;
-            case 'sink':
-                prompt = `You are a battleship commander. You just sunk the enemy's ${context.shipType}. Gloat briefly.`;
-                break;
-            case 'win':
-                prompt = "You are a battleship commander. You won the game! Celebrate briefly.";
-                break;
-            case 'lose':
-                prompt = "You are a battleship commander. You lost the game. Be a gracious but disappointed loser briefly.";
-                break;
-            default:
-                return null;
-        }
-
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: prompt
-                        }]
-                    }]
-                })
+                body: JSON.stringify({ event, context })
             });
 
             if (!response.ok) {
-                throw new Error(`API Error: ${response.statusText}`);
+                const errorData = await response.json();
+                console.warn(`Server Error: ${response.status} ${response.statusText} - ${errorData.error}`);
+                return getFallbackCommentary(event, context);
             }
 
             const data = await response.json();
-            const text = data.candidates[0].content.parts[0].text;
-            return text;
+            return data.commentary;
         } catch (error) {
-            console.error("Error fetching commentary:", error);
-            return null;
+            console.error("Error fetching commentary from server:", error);
+            return getFallbackCommentary(event, context);
         }
+    };
+
+    const getFallbackCommentary = (event, context) => {
+        const fallbacks = {
+            'game_start': ["Enemy fleet detected. Battle stations!", "Let's sink them all, Commander!", "Target locked. Ready to fire."],
+            'hit': ["Direct hit!", "Target impacted!", "Boom! That's a hit!", "We got them!"],
+            'miss': ["Missed!", "Adjusting coordinates...", "Shot wide!", "No effect."],
+            'sink': [`Enemy ${context.shipType || 'ship'} sunk!`, "Splash one!", "Target destroyed!", "That ship is history!"],
+            'player_hit': ["We're taking fire!", "Hull breach detected!", "They hit us!", "Damage report!"],
+            'player_miss': ["That was close!", "Evasive maneuvers successful!", "They missed us!", "No damage taken."],
+            'player_sink': [`Our ${context.shipType || 'ship'} has been sunk!`, "We lost a ship!", "Man the lifeboats!", "They got one of ours!"],
+            'win': ["Victory is ours!", "Enemy fleet eliminated!", "Mission accomplished!", "We rule the seas!"],
+            'lose': ["We have been defeated.", "Abandon ship!", "Mission failed.", "Retreat!"]
+        };
+
+        const messages = fallbacks[event] || ["..."];
+        return messages[Math.floor(Math.random() * messages.length)];
     };
 
     return {

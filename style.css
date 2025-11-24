@@ -1,0 +1,5 @@
+/* AI Thinking Animation */
+.thinking-cell {
+    background-color: rgba(0, 255, 0, 0.3) !important;
+    transition: background-color 0.1s ease-in-out;
+}

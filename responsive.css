@@ -1,0 +1,74 @@
+/* Responsive Design */
+
+/* For tablets and smaller desktops */
+@media (max-width: 992px) {
+    #game-container {
+        padding: 20px;
+    }
+
+    .boards-container {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* For mobile devices */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+
+    .grid {
+        grid-template-columns: repeat(10, 28px);
+    }
+
+    .cell {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .grid-header {
+        grid-template-columns: repeat(10, 30px);
+    }
+    
+    .grid-sidebar {
+        grid-template-rows: repeat(10, 30px);
+    }
+
+    #audio-controls {
+        top: 10px;
+        right: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.5em;
+    }
+
+    .grid {
+        grid-template-columns: repeat(10, 24px);
+    }
+
+    .cell {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .grid-header {
+        grid-template-columns: repeat(10, 26px);
+    }
+    
+    .grid-sidebar {
+        grid-template-rows: repeat(10, 26px);
+    }
+
+    .btn {
+        padding: 8px 12px;
+        font-size: 0.8em;
+    }
+}
